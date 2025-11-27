@@ -1,85 +1,91 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-// 1. 主题设置与国际化加载
+/**
+ * 1. 资源预连接 (性能优化核心)
+ * 提前与 Google 字体服务器建立连接，减少延迟
+ */
+function zen_resource_hints( $urls, $relation_type ) {
+    if ( 'preconnect' === $relation_type ) {
+        $urls[] = 'https://fonts.googleapis.com';
+        $urls[] = array(
+            'href' => 'https://fonts.gstatic.com',
+            'crossorigin' => 'anonymous',
+        );
+    }
+    return $urls;
+}
+add_filter( 'wp_resource_hints', 'zen_resource_hints', 10, 2 );
+
+/**
+ * 2. 主题设置与功能开启
+ */
 function zen_setup() {
     load_theme_textdomain('zen', get_template_directory() . '/languages');
 
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
+    
     register_nav_menus(array(
         'primary' => __('Primary Menu', 'zen'),
         'footer'  => __('Footer Menu', 'zen'),
     ));
+    
     add_theme_support('html5', array('search-form', 'comment-form', 'comment-list', 'gallery', 'caption'));
     add_filter( 'pre_option_link_manager_enabled', '__return_true' );
 }
 add_action('after_setup_theme', 'zen_setup');
 
-// 2. 加载资源
+/**
+ * 3. 加载资源 (样式与脚本)
+ */
 function zen_scripts() {
-    wp_enqueue_script('phosphor-icons', 'https://unpkg.com/@phosphor-icons/web', array(), null, false);
-    wp_enqueue_style('highlight-css', 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css');
-    wp_enqueue_script('highlight-js', 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js', array(), null, true);
-    
-    // 版本号 1.1.6
-    wp_enqueue_script('zen-main', get_template_directory_uri() . '/js/main.js', array(), '1.1.6', true); 
+    $ver = '1.1.7'; // 更新版本号以便刷新缓存
 
+    // A. 加载 Google Fonts (使用全量包链接，preconnect 优化)
+    wp_enqueue_style('zen-google-fonts', 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif+SC:wght@200..900&display=swap', array(), null);
+
+    // B. 加载本地图标库核心 (扁平化路径)
+    // 对应文件: assets/js/phosphor-icons.js
+    wp_enqueue_script('phosphor-icons', get_template_directory_uri() . '/assets/js/phosphor-icons.js', array(), $ver, false);
+
+    // C. 加载本地代码高亮样式 (扁平化路径)
+    // 对应文件: assets/css/github-dark.min.css
+    wp_enqueue_style('highlight-css', get_template_directory_uri() . '/assets/css/github-dark.min.css', array(), $ver);
+
+    // D. 加载本地代码高亮脚本 (扁平化路径)
+    // 对应文件: assets/js/highlight.min.js
+    wp_enqueue_script('highlight-js', get_template_directory_uri() . '/assets/js/highlight.min.js', array(), $ver, true);
+    
+    // E. 主题核心逻辑
+    wp_enqueue_script('zen-main', get_template_directory_uri() . '/js/main.js', array(), $ver, true); 
+
+    // F. 主题编译后的 Tailwind 样式
     if (file_exists(get_template_directory() . '/assets/css/style.css')) {
         wp_enqueue_style('zen-compiled-style', get_template_directory_uri() . '/assets/css/style.css', array(), filemtime(get_template_directory() . '/assets/css/style.css'));
     }
-
+    
+    // 评论回复脚本
     if (is_singular() && comments_open() && get_option('thread_comments')) {
         wp_enqueue_script('comment-reply');
     }
 }
 add_action('wp_enqueue_scripts', 'zen_scripts');
 
-// 3. 样式补丁
-function zen_add_tailwind_dev() {
-    if (!file_exists(get_template_directory() . '/assets/css/style.css')) {
-        ?>
-        <script src="https://cdn.tailwindcss.com?plugins=typography,forms"></script>
-        <script>
-            tailwind.config = {
-                darkMode: 'media',
-                theme: {
-                    extend: {
-                        maxWidth: { 'zen': '56rem' },
-                        typography: (theme) => ({
-                            DEFAULT: {
-                                css: {
-                                    '--tw-prose-body': theme('colors.gray.700'),
-                                    '--tw-prose-headings': theme('colors.gray.900'),
-                                    '--tw-prose-links': theme('colors.gray.900'),
-                                    maxWidth: '100%',
-                                    a: { textDecoration: 'none', borderBottom: '1px solid #e5e7eb', transition: 'border-color 0.2s', '&:hover': { borderBottomColor: '#111827' } },
-                                    'figure iframe': { marginTop: '0', marginBottom: '0' },
-                                    // 可以在这里配置，但为了保险起见，我们在下方 style 中强制覆盖
-                                    'pre': { overflowX: 'auto', whiteSpace: 'pre' }, 
-                                },
-                            },
-                            invert: {
-                                css: {
-                                    '--tw-prose-body': theme('colors.gray.300'),
-                                    '--tw-prose-headings': theme('colors.white'),
-                                    '--tw-prose-links': theme('colors.white'),
-                                    a: { borderBottom: '1px solid #374151', '&:hover': { borderBottomColor: '#f3f4f6' } },
-                                }
-                            }
-                        }),
-                    }
-                }
-            }
-        </script>
-        <?php 
-    }
-    
+/**
+ * 4. 样式补丁与自定义覆盖
+ * 移除了远程 Tailwind CDN，保留必要的 CSS 覆盖
+ */
+function zen_custom_styles() {
     ?>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+        /* 已移除 @import google fonts，改由 wp_enqueue_style 加载 */
+        
+        /* 字体定义 */
         body { font-family: 'Inter', sans-serif; }
         h1, h2, h3, h4, h5, h6, .serif { font-family: 'Noto Serif SC', serif; }
+        
+        /* 装饰性样式 */
         .post-divider { height: 1px; background: linear-gradient(to right, transparent, #e5e7eb, transparent); }
         .dark .post-divider { background: linear-gradient(to right, transparent, #374151, transparent); }
         
@@ -143,15 +149,15 @@ function zen_add_tailwind_dev() {
         .wp-block-file .wp-block-file__button:hover { opacity: 0.9; }
         @media (prefers-color-scheme: dark) { .wp-block-file .wp-block-file__button { background: #fff; color: #000; } }
 
-        /* --- 代码块横向滚动优化 (Fix Code Wrapping) --- */
+        /* --- 代码块横向滚动优化 --- */
         .prose pre, .wp-block-code {
-            overflow-x: auto !important; /* 允许横向滚动 */
-            white-space: pre !important; /* 强制不换行 */
+            overflow-x: auto !important;
+            white-space: pre !important;
             word-wrap: normal !important;
             max-width: 100%;
         }
         .prose pre code, .wp-block-code code {
-            white-space: pre !important; /* 确保内部 code 标签也不换行 */
+            white-space: pre !important;
             overflow-wrap: normal !important;
             word-break: normal !important;
             min-width: 100%;
@@ -159,13 +165,20 @@ function zen_add_tailwind_dev() {
     </style>
     <?php
 }
-add_action('wp_head', 'zen_add_tailwind_dev', 5);
+add_action('wp_head', 'zen_custom_styles', 5);
 
-// 4. 优化与功能
+/**
+ * 5. 其他优化与功能
+ */
+// 移除 emoji 脚本
 remove_action('wp_head', 'print_emoji_detection_script', 7);
 remove_action('wp_print_styles', 'print_emoji_styles');
+
+// 摘要长度
 function zen_custom_excerpt_length($length) { return 120; }
 add_filter('excerpt_length', 'zen_custom_excerpt_length', 999);
+
+// 分页功能
 function zen_pagination() {
     global $wp_query;
     $big = 999999999;
@@ -190,6 +203,8 @@ function zen_pagination() {
         echo '</div>';
     }
 }
+
+// 评论回调函数
 function zen_comment_callback($comment, $args, $depth) {
     ?>
     <article id="div-comment-<?php comment_ID(); ?>" class="comment-body flex gap-4 group relative animate-fade-in">
