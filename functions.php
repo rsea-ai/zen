@@ -22,8 +22,8 @@ function zen_scripts() {
     wp_enqueue_style('highlight-css', 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css');
     wp_enqueue_script('highlight-js', 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js', array(), null, true);
     
-    // 版本号 1.1.4
-    wp_enqueue_script('zen-main', get_template_directory_uri() . '/js/main.js', array(), '1.1.4', true); 
+    // 版本号 1.1.5
+    wp_enqueue_script('zen-main', get_template_directory_uri() . '/js/main.js', array(), '1.1.5', true); 
 
     if (file_exists(get_template_directory() . '/assets/css/style.css')) {
         wp_enqueue_style('zen-compiled-style', get_template_directory_uri() . '/assets/css/style.css', array(), filemtime(get_template_directory() . '/assets/css/style.css'));
@@ -83,18 +83,11 @@ function zen_add_tailwind_dev() {
         
         /* --- 评论列表样式 --- */
         .comment-list, .comment-list .children { list-style: none !important; margin: 0; padding: 0; }
-        
-        /* 调整：顶级评论间距减小，之前太大了 */
         .comment-list > li { margin-bottom: 3rem; }
-        
         .comment-list { padding-top: 1rem; }
-
         .comment-list .children { margin-top: 2rem; margin-left: 0.5rem; padding-left: 1rem; border-left: 2px solid #e5e7eb; }
         .dark .comment-list .children { border-color: #374151; }
-        
-        /* 调整 (解决问题1)：同级子评论间距减小到 2rem，解决“距离依旧很大”的问题 */
         .comment-list .children > li { margin-top: 2rem; position: relative; }
-        
         @media (min-width: 768px) {
             .comment-list .children { margin-left: 3.5rem; padding-left: 2rem; }
         }
@@ -120,9 +113,18 @@ function zen_add_tailwind_dev() {
             #submit:hover { background-color: #e5e7eb !important; }
         }
 
+        /* --- TOC 目录样式 --- */
         .toc-link { display: block; padding: 0.375rem 0; border-left: 2px solid transparent; margin-left: -1px; color: #9ca3af; transition: all 0.3s ease; text-decoration: none; }
+        
+        /* 亮色模式悬浮 */
         .toc-link:hover { color: #111827; }
+        /* 暗色模式悬浮 (class 切换方式) */
         .dark .toc-link:hover { color: #fff; }
+        /* 修复：暗色模式悬浮 (系统自动方式) - 这段是你缺失的 */
+        @media (prefers-color-scheme: dark) {
+            .toc-link:hover { color: #fff; }
+        }
+
         .toc-link.active { border-left-color: #111827; color: #111827; font-weight: 500; }
         @media (prefers-color-scheme: dark) { .toc-link.active { border-left-color: #fff; color: #fff; } }
 
@@ -199,7 +201,6 @@ function zen_comment_callback($comment, $args, $depth) {
                 </div>
             </div>
             <div class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose dark:prose-invert max-w-none break-words mb-3"><?php comment_text(); ?></div>
-            <!-- 调整 (解决问题2)：增大间距到 mt-5，拉开回复按钮与正文的距离，解决“贴得很紧”的问题 -->
             <div class="text-xs mt-5">
                 <?php 
                 $reply_args = array_merge($args, array('depth' => $depth, 'max_depth' => $args['max_depth'], 'reply_text' => '回复', 'add_below' => 'div-comment'));
