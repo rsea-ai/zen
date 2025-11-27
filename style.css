@@ -1,0 +1,50 @@
+/*
+Theme Name: Zen WordPress Theme
+Theme URI: [https: //github.com/rsea-ai/zen](https: //github.com/rsea-ai/zen)
+Author: RSEA
+Author URI: [RSEA.AI](https://blog.rsea.ai)
+Description: Zen 是一个基于极简主义设计理念构建的 WordPress 主题。它专注于排版、留白和沉浸式阅读体验，旨在为博主和读者提供一个无干扰、高性能的数字空间。
+Version: 1.0.0
+License: GNU General Public License v3
+License URI: [https://www.gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html)
+Text Domain: zen
+Tags: one-column, accessibility-ready, blog, custom-menu, dark-mode
+*/
+
+/* 
+ * 这里的样式主要用于补充 Tailwind 无法覆盖的 WordPress 特殊类
+ * 或者是为了处理一些遗留问题。大部分样式通过 Tailwind 类在模板中处理。
+ */
+
+/* 屏幕阅读器文本隐藏 */
+.screen-reader-text {
+    border: 0;
+    clip: rect(1px, 1px, 1px, 1px);
+    -webkit-clip-path: inset(50%);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    word-wrap: normal !important;
+}
+
+/* 评论嵌套层级 */
+.children {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+@media (min-width: 768px) {
+    .children {
+        margin-left: 2rem;
+        border-left: 1px solid #e5e7eb;
+        padding-left: 1rem;
+    }
+
+    .dark .children {
+        border-color: #374151;
+    }
+}
