@@ -22,8 +22,8 @@ function zen_scripts() {
     wp_enqueue_style('highlight-css', 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css');
     wp_enqueue_script('highlight-js', 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js', array(), null, true);
     
-    // 版本号 1.1.5
-    wp_enqueue_script('zen-main', get_template_directory_uri() . '/js/main.js', array(), '1.1.5', true); 
+    // 版本号 1.1.6
+    wp_enqueue_script('zen-main', get_template_directory_uri() . '/js/main.js', array(), '1.1.6', true); 
 
     if (file_exists(get_template_directory() . '/assets/css/style.css')) {
         wp_enqueue_style('zen-compiled-style', get_template_directory_uri() . '/assets/css/style.css', array(), filemtime(get_template_directory() . '/assets/css/style.css'));
@@ -55,6 +55,8 @@ function zen_add_tailwind_dev() {
                                     maxWidth: '100%',
                                     a: { textDecoration: 'none', borderBottom: '1px solid #e5e7eb', transition: 'border-color 0.2s', '&:hover': { borderBottomColor: '#111827' } },
                                     'figure iframe': { marginTop: '0', marginBottom: '0' },
+                                    // 可以在这里配置，但为了保险起见，我们在下方 style 中强制覆盖
+                                    'pre': { overflowX: 'auto', whiteSpace: 'pre' }, 
                                 },
                             },
                             invert: {
@@ -115,21 +117,14 @@ function zen_add_tailwind_dev() {
 
         /* --- TOC 目录样式 --- */
         .toc-link { display: block; padding: 0.375rem 0; border-left: 2px solid transparent; margin-left: -1px; color: #9ca3af; transition: all 0.3s ease; text-decoration: none; }
-        
-        /* 亮色模式悬浮 */
         .toc-link:hover { color: #111827; }
-        /* 暗色模式悬浮 (class 切换方式) */
         .dark .toc-link:hover { color: #fff; }
-        /* 修复：暗色模式悬浮 (系统自动方式) - 这段是你缺失的 */
-        @media (prefers-color-scheme: dark) {
-            .toc-link:hover { color: #fff; }
-        }
-
+        @media (prefers-color-scheme: dark) { .toc-link:hover { color: #fff; } }
         .toc-link.active { border-left-color: #111827; color: #111827; font-weight: 500; }
         @media (prefers-color-scheme: dark) { .toc-link.active { border-left-color: #fff; color: #fff; } }
 
+        /* --- 媒体与文件样式 --- */
         .wp-block-embed iframe { width: 100% !important; height: auto !important; aspect-ratio: 16 / 9; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-
         .zen-audio-player { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 9999px; margin: 2rem 0; transition: all 0.3s ease; }
         @media (prefers-color-scheme: dark) { .zen-audio-player { background: #18181b; border-color: #27272a; } }
         .zen-audio-btn { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #111827; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
@@ -139,7 +134,6 @@ function zen_add_tailwind_dev() {
         .zen-audio-progress-bar { height: 100%; background: #111827; border-radius: 2px; width: 0%; position: relative; }
         @media (prefers-color-scheme: dark) { .zen-audio-progress-bar { background: #fff; } }
         .zen-audio-time { font-size: 0.75rem; font-family: monospace; color: #6b7280; min-width: 40px; text-align: right; }
-
         .wp-block-file { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; margin: 2rem 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s; }
         .wp-block-file:hover { border-color: #9ca3af; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         @media (prefers-color-scheme: dark) { .wp-block-file { background: #18181b; border-color: #27272a; } .wp-block-file:hover { border-color: #52525b; } }
@@ -148,6 +142,20 @@ function zen_add_tailwind_dev() {
         .wp-block-file .wp-block-file__button { background: #111827; color: #fff; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; text-decoration: none; border: none; transition: opacity 0.2s; }
         .wp-block-file .wp-block-file__button:hover { opacity: 0.9; }
         @media (prefers-color-scheme: dark) { .wp-block-file .wp-block-file__button { background: #fff; color: #000; } }
+
+        /* --- 代码块横向滚动优化 (Fix Code Wrapping) --- */
+        .prose pre, .wp-block-code {
+            overflow-x: auto !important; /* 允许横向滚动 */
+            white-space: pre !important; /* 强制不换行 */
+            word-wrap: normal !important;
+            max-width: 100%;
+        }
+        .prose pre code, .wp-block-code code {
+            white-space: pre !important; /* 确保内部 code 标签也不换行 */
+            overflow-wrap: normal !important;
+            word-break: normal !important;
+            min-width: 100%;
+        }
     </style>
     <?php
 }
