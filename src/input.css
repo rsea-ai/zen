@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Fonts Import */
+@import url('[https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&display=swap](https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&display=swap)');
+
+@layer base {
+    body { font-family: 'Inter', sans-serif; }
+    h1, h2, h3, h4, h5, h6, .serif { font-family: 'Noto Serif SC', serif; }
+}
+
+@layer components {
+    .post-divider {
+        @apply h-[1px] bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700;
+    }
+    .toc-link.active {
+        @apply text-gray-900 dark:text-white font-medium border-l-2 border-gray-900 dark:border-white pl-[calc(1rem-2px)];
+    }
+}
