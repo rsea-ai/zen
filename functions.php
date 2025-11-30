@@ -39,7 +39,7 @@ add_action('after_setup_theme', 'zen_setup');
  * 3. 加载资源
  */
 function zen_scripts() {
-    $ver = '1.1.15'; // 更新版本号以强制刷新 CSS 缓存
+    $ver = '1.1.16'; // 更新版本号以强制刷新 CSS 缓存
 
     // A. Google Fonts
     wp_enqueue_style('zen-google-fonts', 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif+SC:wght@200..900&display=swap', array(), null);
@@ -66,7 +66,7 @@ function zen_scripts() {
 add_action('wp_enqueue_scripts', 'zen_scripts');
 
 /**
- * 4. 样式补丁 (关键修复: 恢复丢失的样式 + 修复音频播放器对比度)
+ * 4. 样式补丁 (关键修复: 恢复丢失的样式 + 修复音频播放器对比度 + 音频播放器暗色样式)
  */
 function zen_custom_styles() {
     ?>
@@ -118,25 +118,39 @@ function zen_custom_styles() {
         .toc-link.active { border-left-color: #111827; color: #111827; font-weight: 500; }
         @media (prefers-color-scheme: dark) { .toc-link.active { border-left-color: #fff; color: #fff; } }
 
-        /* --- 修复: 恢复音频播放器样式并增强对比度 --- */
-        /* A11y Fix: 背景色加深边框加深以提高对比度 */
+        /* --- 修复: 恢复音频播放器样式并增强对比度与暗色支持 --- */
         .zen-audio-player { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 9999px; margin: 2rem 0; transition: all 0.3s ease; }
-        .dark .zen-audio-player { background: #18181b; border-color: #52525b; }
         
-        /* 增加了 border: none 和 padding: 0 以重置 button 元素的默认样式 */
+        /* 暗色模式下播放器背景变深，边框调整 */
+        @media (prefers-color-scheme: dark) { 
+            .zen-audio-player { background: #1f2937; border-color: #374151; } 
+        }
+        
         .zen-audio-btn { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #111827; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; border: none; padding: 0; }
         .zen-audio-btn:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
-        @media (prefers-color-scheme: dark) { .zen-audio-btn { background: #e4e4e7; color: #000; } }
         
-        /* 恢复进度条和时间样式 - 时间文字加深 */
-        .zen-audio-progress-container { flex-grow: 1; height: 4px; background: #9ca3af; border-radius: 2px; position: relative; cursor: pointer; } /* 进度条背景加深 */
-        .dark .zen-audio-progress-container { background: #52525b; }
+        /* 暗色模式下按钮变成浅色，图标深色 */
+        @media (prefers-color-scheme: dark) { 
+            .zen-audio-btn { background: #e5e7eb; color: #111827; } 
+        }
+        
+        .zen-audio-progress-container { flex-grow: 1; height: 4px; background: #9ca3af; border-radius: 2px; position: relative; cursor: pointer; }
+        /* 暗色模式下进度条底色变深 */
+        @media (prefers-color-scheme: dark) { 
+            .zen-audio-progress-container { background: #4b5563; } 
+        }
+
         .zen-audio-progress-bar { height: 100%; background: #111827; border-radius: 2px; width: 0%; position: relative; }
-        .dark .zen-audio-progress-bar { background: #fff; }
+        /* 暗色模式下进度条填充色变成浅色 */
+        @media (prefers-color-scheme: dark) { 
+            .zen-audio-progress-bar { background: #e5e7eb; } 
+        }
         
-        /* A11y Fix: 时间文字颜色加深到 #4b5563 (text-gray-600) */
         .zen-audio-time { font-size: 0.75rem; font-family: monospace; color: #4b5563; min-width: 40px; text-align: right; font-weight: 500; }
-        .dark .zen-audio-time { color: #d1d5db; }
+        /* 暗色模式下时间文字颜色变浅 */
+        @media (prefers-color-scheme: dark) { 
+            .zen-audio-time { color: #d1d5db; } 
+        }
 
         /* --- 修复: 恢复文件下载块样式 --- */
         .wp-block-file { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; margin: 2rem 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s; }
