@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * 1. 资源预连接
+ * 1. 资源预连接 (性能优化)
  */
 function zen_resource_hints( $urls, $relation_type ) {
     if ( 'preconnect' === $relation_type ) {
@@ -21,12 +21,15 @@ add_filter( 'wp_resource_hints', 'zen_resource_hints', 10, 2 );
  */
 function zen_setup() {
     load_theme_textdomain('zen', get_template_directory() . '/languages');
+
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
+    
     register_nav_menus(array(
         'primary' => __('Primary Menu', 'zen'),
         'footer'  => __('Footer Menu', 'zen'),
     ));
+    
     add_theme_support('html5', array('search-form', 'comment-form', 'comment-list', 'gallery', 'caption', 'script', 'style'));
     add_filter( 'pre_option_link_manager_enabled', '__return_true' );
 }
@@ -36,14 +39,22 @@ add_action('after_setup_theme', 'zen_setup');
  * 3. 加载资源
  */
 function zen_scripts() {
-    $ver = '1.1.13'; // Version bump
+    $ver = '1.1.14'; // 更新版本号以强制刷新 CSS 缓存
 
+    // A. Google Fonts
     wp_enqueue_style('zen-google-fonts', 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif+SC:wght@200..900&display=swap', array(), null);
+
+    // B. Phosphor Icons
     wp_enqueue_script('phosphor-icons', get_template_directory_uri() . '/assets/js/phosphor-icons.js', array(), $ver, false);
+
+    // C. Highlight.js
     wp_enqueue_style('highlight-css', get_template_directory_uri() . '/assets/css/github-dark.min.css', array(), $ver);
     wp_enqueue_script('highlight-js', get_template_directory_uri() . '/assets/js/highlight.min.js', array(), $ver, true);
+    
+    // D. Main JS
     wp_enqueue_script('zen-main', get_template_directory_uri() . '/js/main.js', array(), $ver, true); 
 
+    // E. Compiled Tailwind CSS
     if (file_exists(get_template_directory() . '/assets/css/style.css')) {
         wp_enqueue_style('zen-compiled-style', get_template_directory_uri() . '/assets/css/style.css', array(), filemtime(get_template_directory() . '/assets/css/style.css'));
     }
@@ -55,7 +66,7 @@ function zen_scripts() {
 add_action('wp_enqueue_scripts', 'zen_scripts');
 
 /**
- * 4. 样式补丁
+ * 4. 样式补丁 (关键修复: 恢复丢失的样式)
  */
 function zen_custom_styles() {
     ?>
@@ -65,7 +76,7 @@ function zen_custom_styles() {
         .post-divider { height: 1px; background: linear-gradient(to right, transparent, #e5e7eb, transparent); }
         .dark .post-divider { background: linear-gradient(to right, transparent, #374151, transparent); }
         
-        /* 评论列表样式修复 */
+        /* 评论列表样式 */
         .comment-list, .comment-list .children { list-style: none !important; margin: 0; padding: 0; }
         .comment-list > li { margin-bottom: 3rem; }
         .comment-list { padding-top: 1rem; }
@@ -107,13 +118,38 @@ function zen_custom_styles() {
         .toc-link.active { border-left-color: #111827; color: #111827; font-weight: 500; }
         @media (prefers-color-scheme: dark) { .toc-link.active { border-left-color: #fff; color: #fff; } }
 
-        /* Media */
-        .wp-block-embed iframe { width: 100% !important; height: auto !important; aspect-ratio: 16 / 9; border-radius: 0.5rem; }
-        .zen-audio-player { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 9999px; margin: 2rem 0; }
+        /* --- 修复: 恢复音频播放器样式 --- */
+        .zen-audio-player { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 9999px; margin: 2rem 0; transition: all 0.3s ease; }
         .dark .zen-audio-player { background: #18181b; border-color: #27272a; }
-        .zen-audio-btn { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #111827; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        /* 增加了 border: none 和 padding: 0 以重置 button 元素的默认样式 */
+        .zen-audio-btn { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #111827; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; border: none; padding: 0; }
         .zen-audio-btn:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
+        @media (prefers-color-scheme: dark) { .zen-audio-btn { background: #e4e4e7; color: #000; } }
+        
+        /* 恢复进度条和时间样式 */
+        .zen-audio-progress-container { flex-grow: 1; height: 4px; background: #d1d5db; border-radius: 2px; position: relative; cursor: pointer; }
+        .dark .zen-audio-progress-container { background: #3f3f46; }
+        .zen-audio-progress-bar { height: 100%; background: #111827; border-radius: 2px; width: 0%; position: relative; }
+        .dark .zen-audio-progress-bar { background: #fff; }
+        .zen-audio-time { font-size: 0.75rem; font-family: monospace; color: #6b7280; min-width: 40px; text-align: right; }
+
+        /* --- 修复: 恢复文件下载块样式 --- */
+        .wp-block-file { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; margin: 2rem 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s; }
+        .wp-block-file:hover { border-color: #9ca3af; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        @media (prefers-color-scheme: dark) { .wp-block-file { background: #18181b; border-color: #27272a; } .wp-block-file:hover { border-color: #52525b; } }
+        .wp-block-file a:first-child { font-weight: 500; color: #111827; text-decoration: none; border: none; }
+        @media (prefers-color-scheme: dark) { .wp-block-file a:first-child { color: #f4f4f5; } }
+        .wp-block-file .wp-block-file__button { background: #111827; color: #fff; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; text-decoration: none; border: none; transition: opacity 0.2s; }
+        .wp-block-file .wp-block-file__button:hover { opacity: 0.9; }
+        @media (prefers-color-scheme: dark) { .wp-block-file .wp-block-file__button { background: #fff; color: #000; } }
+
+        /* Embeds */
+        .wp-block-embed iframe { width: 100% !important; height: auto !important; aspect-ratio: 16 / 9; border-radius: 0.5rem; }
+        
+        /* Code blocks */
         .prose pre, .wp-block-code { overflow-x: auto !important; max-width: 100%; }
+        
+        /* Screen Reader Text */
         .screen-reader-text { border: 0; clip: rect(1px, 1px, 1px, 1px); clip-path: inset(50%); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; width: 1px; word-wrap: normal !important; }
     </style>
     <?php
@@ -175,7 +211,7 @@ function zen_pagination() {
     }
 }
 
-// 评论回调 (Fix: 手动输出 li 以修复列表结构，增加 font-sans 修复字体)
+// 评论回调 (保持 A11y 结构修复)
 function zen_comment_callback($comment, $args, $depth) {
     ?>
     <li id="comment-<?php comment_ID(); ?>" <?php comment_class(); ?>>
@@ -186,7 +222,6 @@ function zen_comment_callback($comment, $args, $depth) {
             <div class="flex-grow min-w-0">
                 <div class="flex items-center justify-between mb-2">
                     <h4 class="text-sm font-bold text-gray-900 dark:text-white"><?php echo get_comment_author(); ?></h4>
-                    <!-- Fix: font-sans 强制使用无衬线字体，避免等宽字体问题 -->
                     <time class="text-xs text-gray-600 dark:text-gray-400 font-sans" datetime="<?php echo get_comment_time('c'); ?>"><?php printf(__('%1$s前', 'zen'), human_time_diff(get_comment_time('U'), current_time('timestamp'))); ?></time>
                 </div>
                 <div class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose dark:prose-invert max-w-none break-words mb-3"><?php comment_text(); ?></div>
@@ -199,7 +234,6 @@ function zen_comment_callback($comment, $args, $depth) {
                 </div>
             </div>
         </article>
-    <!-- </li> 标签由 WordPress 自动闭合，无需手动闭合 -->
     <?php
 }
 ?>
