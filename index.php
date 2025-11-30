@@ -27,7 +27,9 @@
                     echo '<span class="text-gray-300 dark:text-gray-700" aria-hidden="true">*</span>';
                 }
                 ?>
-                <time datetime="<?php echo get_the_date('c'); ?>"><?php echo get_the_date('Y年 n月 j日'); ?></time>
+                <a href="<?php echo get_month_link(get_the_date('Y'), get_the_date('n')); ?>" class="hover:text-gray-900 dark:hover:text-white transition-colors" aria-label="查看 <?php echo get_the_date('Y年n月'); ?> 的所有文章">
+                    <time datetime="<?php echo get_the_date('c'); ?>"><?php echo get_the_date('Y年 n月 j日'); ?></time>
+                </a>
             </div>
             
             <h2 id="post-title-<?php the_ID(); ?>" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">

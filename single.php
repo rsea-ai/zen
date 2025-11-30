@@ -24,7 +24,11 @@
                 echo '<span class="text-gray-300 dark:text-gray-600">/</span>';
             }
             ?>
-            <time datetime="<?php echo get_the_date('c'); ?>"><?php echo get_the_date('Y年 n月 j日'); ?></time>
+            <time datetime="<?php echo get_the_date('c'); ?>">
+                <a href="<?php echo get_month_link(get_the_date('Y'), get_the_date('n')); ?>" class="hover:text-gray-900 dark:hover:text-white transition-colors">
+                    <?php echo get_the_date('Y年 n月 j日'); ?>
+                </a>
+            </time>
         </div>
         <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight serif">
             <?php the_title(); ?>
