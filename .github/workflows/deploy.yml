@@ -1,6 +1,5 @@
 name: Auto Build on Push
 
-# 触发条件：main 分支的 push 动作
 on:
   push:
     branches:
@@ -10,34 +9,40 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # 必须权限：允许创建/更新 Release
+      contents: write
 
     steps:
       # 1. 拉取代码
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. 准备 Node.js 环境
+      # 2. 获取当前时间
+      # 这里的 id: date 很重要，后面的 steps.date 就是引用这里的
+      - name: Get Current Date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+        env:
+          TZ: Asia/Shanghai # 设置时区为北京时间，否则显示的是 UTC 时间
+
+      # 3. 准备 Node.js 环境
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      # 3. 安装依赖
+      # 4. 安装依赖
       - name: Install Dependencies
         run: npm install
 
-      # 4. 执行构建 (生成 CSS)
+      # 5. 执行构建
       - name: Build CSS
         run: npm run build
 
-      # 5. 打包主题 (排除开发文件)
+      # 6. 打包主题
       - name: Zip Theme
         run: |
           mkdir zen-build
-          
-          # 使用 rsync 排除你指定的文件和目录
           rsync -av --progress . zen-build/zen \
             --exclude 'src' \
             --exclude 'node_modules' \
@@ -52,20 +57,20 @@ jobs:
             --exclude 'zen-build' \
             --exclude 'README.md' \
             --exclude 'LICENSE'
-
-          # 进入目录打包，确保解压后包含 'zen' 文件夹
           cd zen-build
           zip -r ../zen.zip zen
 
-      # 6. 发布/更新 Release (关键修改)
-      # 这里的逻辑是：自动更新一个名为 "latest" 的 Tag
+      # 7. 更新 Release
       - name: Update Release
         uses: softprops/action-gh-release@v1
         with:
           files: zen.zip
-          name: "最新自动构建 (Latest Build)" # Release 的标题
-          tag_name: latest      # 固定的 Tag 名字
-          body: "这是基于最新代码自动打包的主题文件。构建时间：${{ steps.date.outputs.date }}"
+          name: "最新自动构建 (Latest Build)"
+          tag_name: latest
+          body: |
+            这是基于最新代码自动打包的主题文件。
+            
+            构建时间：${{ steps.date.outputs.date }}
           draft: false
           prerelease: false
         env:
