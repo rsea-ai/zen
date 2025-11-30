@@ -159,6 +159,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
         progressContainer.setAttribute('aria-valuenow', '0');
         progressContainer.setAttribute('aria-valuemin', '0');
         progressContainer.setAttribute('aria-valuemax', '100');
+        // A11y Fix: 添加 aria-label 到 progressbar
+        progressContainer.setAttribute('aria-label', '音频播放进度');
 
         const progressBar = document.createElement('div');
         progressBar.className = 'zen-audio-progress-bar';
