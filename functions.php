@@ -39,7 +39,7 @@ add_action('after_setup_theme', 'zen_setup');
  * 3. 加载资源
  */
 function zen_scripts() {
-    $ver = '1.1.16'; // 更新版本号以强制刷新 CSS 缓存
+    $ver = '1.1.17'; // 更新版本号
 
     // A. Google Fonts
     wp_enqueue_style('zen-google-fonts', 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif+SC:wght@200..900&display=swap', array(), null);
@@ -230,7 +230,7 @@ function zen_pagination() {
     }
 }
 
-// 评论回调 (保持 A11y 结构修复)
+// 评论回调 (保持 A11y 结构修复，调整间距)
 function zen_comment_callback($comment, $args, $depth) {
     ?>
     <li id="comment-<?php comment_ID(); ?>" <?php comment_class(); ?>>
@@ -243,8 +243,13 @@ function zen_comment_callback($comment, $args, $depth) {
                     <h4 class="text-sm font-bold text-gray-900 dark:text-white"><?php echo get_comment_author(); ?></h4>
                     <time class="text-xs text-gray-600 dark:text-gray-400 font-sans" datetime="<?php echo get_comment_time('c'); ?>"><?php printf(__('%1$s前', 'zen'), human_time_diff(get_comment_time('U'), current_time('timestamp'))); ?></time>
                 </div>
-                <div class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose dark:prose-invert max-w-none break-words mb-3"><?php comment_text(); ?></div>
-                <div class="text-xs mt-5">
+                <!-- 
+                    间距修复：
+                    1. 内容区域 mb-3 -> mb-2 (缩小底部间距)
+                    2. 回复按钮 mt-5 -> mt-1 (缩小顶部间距)
+                -->
+                <div class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose dark:prose-invert max-w-none break-words mb-2"><?php comment_text(); ?></div>
+                <div class="text-xs mt-1">
                     <?php 
                     $reply_args = array_merge($args, array('depth' => $depth, 'max_depth' => $args['max_depth'], 'reply_text' => '回复', 'add_below' => 'div-comment', 'aria_label' => '回复给 ' . get_comment_author()));
                     $reply_link = get_comment_reply_link($reply_args);
