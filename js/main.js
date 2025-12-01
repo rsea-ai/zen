@@ -227,4 +227,66 @@ document.addEventListener('DOMContentLoaded', (event) => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
+
+    // --- 7. 搜索功能 (Search Modal) ---
+    const searchToggle = document.getElementById('search-toggle');
+    const searchModal = document.getElementById('search-modal');
+    const searchClose = document.getElementById('search-close');
+    const searchInput = document.getElementById('search-input');
+    let lastActiveElementBeforeSearch;
+
+    if (searchToggle && searchModal && searchInput) {
+        const openSearch = () => {
+            lastActiveElementBeforeSearch = document.activeElement; // 记录当前焦点
+            searchModal.classList.remove('hidden');
+            // 延时移除 opacity-0 以触发 CSS transition
+            requestAnimationFrame(() => {
+                searchModal.classList.remove('opacity-0');
+            });
+            document.body.style.overflow = 'hidden';
+            searchToggle.setAttribute('aria-expanded', 'true');
+            // 自动聚焦到输入框
+            setTimeout(() => searchInput.focus(), 100);
+        };
+
+        const closeSearch = () => {
+            searchModal.classList.add('opacity-0');
+            setTimeout(() => {
+                searchModal.classList.add('hidden');
+                document.body.style.overflow = ''; // 恢复滚动
+                if (lastActiveElementBeforeSearch) {
+                    lastActiveElementBeforeSearch.focus(); // 恢复焦点
+                }
+            }, 200); // 匹配 CSS duration-200
+            searchToggle.setAttribute('aria-expanded', 'false');
+        };
+
+        searchToggle.addEventListener('click', openSearch);
+
+        if (searchClose) {
+            searchClose.addEventListener('click', closeSearch);
+        }
+
+        // 点击遮罩层关闭
+        searchModal.addEventListener('click', (e) => {
+            if (e.target === searchModal) closeSearch();
+        });
+
+        // 键盘事件
+        document.addEventListener('keydown', (e) => {
+            // Esc 关闭
+            if (e.key === 'Escape' && !searchModal.classList.contains('hidden')) {
+                closeSearch();
+            }
+            // Cmd+K / Ctrl+K 快捷键 (可选增强)
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                if (searchModal.classList.contains('hidden')) {
+                    openSearch();
+                } else {
+                    closeSearch();
+                }
+            }
+        });
+    }
 });
