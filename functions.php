@@ -39,7 +39,7 @@ add_action('after_setup_theme', 'zen_setup');
  * 3. 加载资源
  */
 function zen_scripts() {
-    $ver = '1.1.17'; // 更新版本号
+    $ver = '1.1.18'; // 更新版本号
 
     // A. Google Fonts
     wp_enqueue_style('zen-google-fonts', 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif+SC:wght@200..900&display=swap', array(), null);
@@ -100,9 +100,21 @@ function zen_custom_styles() {
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
         }
         #submit:hover, #submit:focus { opacity: 0.9; transform: translateY(-1px); outline: 2px solid #3b82f6; outline-offset: 2px; }
+        
+        /* * 暗色模式样式修复：
+         * 将原来的白色背景(#fff)改为深灰色(#27272a)，文字改为浅灰(#e5e7eb)，
+         * 并添加微弱边框以增加层次感，避免"亮瞎眼"。
+         */
         @media (prefers-color-scheme: dark) {
-            #submit { background-color: #fff !important; color: #000 !important; }
-            #submit:hover, #submit:focus { background-color: #f3f4f6 !important; }
+            #submit { 
+                background-color: #27272a !important; /* Zinc-800 */
+                color: #e5e7eb !important; /* Zinc-200 */
+                border: 1px solid #3f3f46 !important; /* Zinc-700 */
+            }
+            #submit:hover, #submit:focus { 
+                background-color: #3f3f46 !important; /* Zinc-700 */
+                color: #fff !important;
+            }
         }
 
         /* Skip Link */
