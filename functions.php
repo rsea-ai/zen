@@ -66,7 +66,7 @@ function zen_scripts() {
 add_action('wp_enqueue_scripts', 'zen_scripts');
 
 /**
- * 4. 样式补丁 (关键修复: 恢复丢失的样式 + 修复音频播放器对比度 + 音频播放器暗色样式)
+ * 4. 样式补丁 (关键修复: 恢复丢失的样式 + 修复音频播放器对比度 + 音频播放器暗色样式 + 修复TOC暗色模式Hover)
  */
 function zen_custom_styles() {
     ?>
@@ -125,8 +125,15 @@ function zen_custom_styles() {
         /* TOC */
         .toc-link { display: block; padding: 0.375rem 0; border-left: 2px solid transparent; margin-left: -1px; color: #4b5563; transition: all 0.3s ease; text-decoration: none; }
         .toc-link:hover, .toc-link:focus { color: #111827; }
+        
+        /* 修复 TOC 暗色模式颜色 (同时支持 .dark 类和系统偏好) */
         .dark .toc-link { color: #9ca3af; }
         .dark .toc-link:hover, .dark .toc-link:focus { color: #fff; }
+        @media (prefers-color-scheme: dark) {
+            .toc-link { color: #9ca3af; }
+            .toc-link:hover, .toc-link:focus { color: #fff; }
+        }
+
         .toc-link.active { border-left-color: #111827; color: #111827; font-weight: 500; }
         @media (prefers-color-scheme: dark) { .toc-link.active { border-left-color: #fff; color: #fff; } }
 
