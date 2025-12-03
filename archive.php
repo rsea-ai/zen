@@ -69,9 +69,11 @@
                 <?php echo wp_trim_words(get_the_excerpt(), 100, '...'); ?>
             </div>
 
-            <!-- 阅读更多 -->
-            <a href="<?php the_permalink(); ?>" class="inline-flex items-center text-sm font-semibold text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors group-hover:translate-x-1 duration-200">
-                阅读更多 <span class="screen-reader-text">关于 <?php the_title(); ?></span> <i class="ph ph-arrow-right ml-1" aria-hidden="true"></i>
+            <!-- 阅读更多 (优化动画) -->
+            <a href="<?php the_permalink(); ?>" class="inline-flex items-center text-sm font-bold tracking-wide text-gray-900 dark:text-white transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:translate-x-1.5 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                阅读更多 
+                <span class="screen-reader-text">关于 <?php the_title(); ?></span> 
+                <i class="ph ph-arrow-right ml-1.5 transform transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true"></i>
             </a>
         </article>
 
