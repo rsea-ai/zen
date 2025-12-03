@@ -17,11 +17,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const lightboxImg = document.getElementById('lightbox-img');
     const closeBtn = document.getElementById('lightbox-close');
     const images = document.querySelectorAll('.entry-content img, .wp-block-image img');
-    let lastFocusedElement; // 记录打开 lightbox 前的焦点元素
+    let lastFocusedElement;
 
     images.forEach(img => {
         img.classList.add('cursor-zoom-in');
-        // A11y: Make images keyboard accessible if they trigger lightbox
         img.setAttribute('tabindex', '0');
         img.setAttribute('role', 'button');
         img.setAttribute('aria-label', '点击查看大图');
@@ -29,7 +28,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const openLightbox = (e) => {
             if (img.parentElement.tagName === 'A') return;
             e.preventDefault();
-            lastFocusedElement = document.activeElement; // 记住焦点
+            lastFocusedElement = document.activeElement;
 
             lightboxImg.src = img.src;
             lightboxImg.alt = img.alt || '放大图片';
@@ -37,7 +36,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             if (lightbox) {
                 lightbox.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
-                // Focus Trap: 移动焦点到关闭按钮
                 setTimeout(() => closeBtn.focus(), 100);
             }
         };
@@ -54,7 +52,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (lightbox && !lightbox.classList.contains('hidden')) {
             lightbox.classList.add('hidden');
             document.body.style.overflow = 'auto';
-            if (lastFocusedElement) lastFocusedElement.focus(); // 恢复焦点
+            if (lastFocusedElement) lastFocusedElement.focus();
         }
     };
 
@@ -66,12 +64,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (e.key === 'Escape') closeLightbox();
     });
 
-    // --- 3. TOC 目录 (A11y: Active States) ---
+    // --- 3. TOC 目录 (Universal Logic) ---
     const article = document.getElementById('post-content');
-    const tocContainer = document.getElementById('toc-container');
-    const tocNav = document.getElementById('toc-nav');
+    const tocContainer = document.getElementById('toc-container'); // PC Sidebar
+    const tocNav = document.getElementById('toc-nav'); // PC Nav Content
+    const drawerTocNav = document.getElementById('drawer-toc-nav'); // Drawer Nav Content
+    const floatingTocBtn = document.getElementById('floating-toc-btn'); // Floating Trigger
+
     const progressBar = document.getElementById('reading-progress');
 
+    // 阅读进度条
     window.addEventListener('scroll', () => {
         if (progressBar) {
             const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
@@ -81,12 +83,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     });
 
-    if (article && tocNav && tocContainer) {
+    // TOC Generation & Spy
+    if (article) {
         const headers = article.querySelectorAll('h2, h3');
         if (headers.length > 0) {
-            tocContainer.classList.remove('opacity-0');
-            let tocHTML = '';
+            // 1. 初始化显示
+            // 只要有目录内容，就移除 display:none (hidden)
+            // 具体的显隐由 CSS @media 查询控制 (xl:block / xl:hidden)
+            if (tocContainer) tocContainer.classList.remove('opacity-0');
+            if (floatingTocBtn) floatingTocBtn.classList.remove('hidden');
 
+            // 2. 生成 HTML
+            let tocHTML = '';
             headers.forEach((header, index) => {
                 if (!header.id) header.id = 'section-' + index;
                 const level = header.tagName.toLowerCase();
@@ -95,40 +103,138 @@ document.addEventListener('DOMContentLoaded', (event) => {
             });
 
             if (document.getElementById('comments')) {
-                tocHTML += `<div class="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-800"><a href="#comments" class="toc-link pl-3 text-sm">评论区</a></div>`;
+                tocHTML += `<div class="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-800"><a href="#comments" class="toc-link pl-3 text-sm" data-target="comments">评论区</a></div>`;
             }
 
-            tocNav.innerHTML = tocHTML;
+            // 3. 填充到两个容器
+            if (tocNav) tocNav.innerHTML = tocHTML;
+            if (drawerTocNav) drawerTocNav.innerHTML = tocHTML;
 
+            // 4. Scroll Spy (滚动监听)
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
+                        // 清除所有高亮
                         document.querySelectorAll('.toc-link').forEach(link => {
                             link.classList.remove('active');
                             link.removeAttribute('aria-current');
                         });
-                        const activeLink = document.querySelector(`.toc-link[data-target="${entry.target.id}"]`);
-                        if (activeLink) {
+
+                        // 高亮对应 ID 的所有链接 (Sidebar 和 Drawer 同时高亮)
+                        const activeLinks = document.querySelectorAll(`.toc-link[data-target="${entry.target.id}"]`);
+                        activeLinks.forEach(activeLink => {
                             activeLink.classList.add('active');
                             activeLink.setAttribute('aria-current', 'location');
-                        }
+
+                            // 仅对 PC 侧边栏进行自动滚动定位，防止在 Drawer 打开时造成页面跳动
+                            if (tocNav && activeLink.parentElement === tocNav) {
+                                const navRect = tocNav.getBoundingClientRect();
+                                const linkRect = activeLink.getBoundingClientRect();
+                                if (linkRect.bottom > navRect.bottom || linkRect.top < navRect.top) {
+                                    activeLink.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                                }
+                            }
+                        });
                     }
                 });
             }, { rootMargin: '-100px 0px -70% 0px' });
+
             headers.forEach(header => observer.observe(header));
+            const commentsSection = document.getElementById('comments');
+            if (commentsSection) observer.observe(commentsSection);
+
         } else {
-            tocContainer.style.display = 'none';
+            // 没有标题，隐藏容器
+            if (tocContainer) tocContainer.style.display = 'none';
+            if (floatingTocBtn) floatingTocBtn.style.display = 'none';
         }
     }
 
-    // --- 4. 移动端菜单 (A11y: ARIA Toggle) ---
+    // --- 4. Drawer TOC Interaction (A11y: Focus Trap) ---
+    const drawerToc = document.getElementById('drawer-toc');
+    const tocOverlay = document.getElementById('toc-overlay');
+    const drawerClose = document.getElementById('drawer-toc-close');
+    let lastFocusBeforeDrawer;
+
+    if (floatingTocBtn && drawerToc && tocOverlay) {
+
+        const openDrawer = () => {
+            lastFocusBeforeDrawer = document.activeElement;
+            tocOverlay.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                tocOverlay.classList.remove('opacity-0');
+                drawerToc.classList.remove('translate-x-full');
+            });
+            document.body.style.overflow = 'hidden';
+
+            // A11y
+            floatingTocBtn.setAttribute('aria-expanded', 'true');
+            drawerToc.removeAttribute('inert');
+
+            // Focus trap: move focus to close button
+            setTimeout(() => {
+                if (drawerClose) drawerClose.focus();
+            }, 300);
+        };
+
+        const closeDrawer = () => {
+            tocOverlay.classList.add('opacity-0');
+            drawerToc.classList.add('translate-x-full');
+
+            setTimeout(() => {
+                tocOverlay.classList.add('hidden');
+                document.body.style.overflow = '';
+                // A11y Cleanup
+                floatingTocBtn.setAttribute('aria-expanded', 'false');
+                drawerToc.setAttribute('inert', '');
+                if (lastFocusBeforeDrawer) lastFocusBeforeDrawer.focus();
+            }, 300);
+        };
+
+        floatingTocBtn.addEventListener('click', openDrawer);
+        if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
+        tocOverlay.addEventListener('click', closeDrawer);
+
+        // 点击目录链接跳转后，自动关闭抽屉
+        if (drawerTocNav) {
+            drawerTocNav.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A') {
+                    closeDrawer();
+                }
+            });
+        }
+
+        // Focus Trap Logic for Drawer
+        drawerToc.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                const focusableElements = drawerToc.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+
+                if (e.shiftKey) { // Shift + Tab
+                    if (document.activeElement === firstElement) {
+                        e.preventDefault();
+                        lastElement.focus();
+                    }
+                } else { // Tab
+                    if (document.activeElement === lastElement) {
+                        e.preventDefault();
+                        firstElement.focus();
+                    }
+                }
+            } else if (e.key === 'Escape') {
+                closeDrawer();
+            }
+        });
+    }
+
+    // --- 5. Mobile Menu ---
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const mobileMenu = document.getElementById('mobile-menu');
 
     if (mobileMenuBtn && mobileMenu) {
         mobileMenuBtn.addEventListener('click', () => {
             const isHidden = mobileMenu.classList.contains('hidden');
-
             if (isHidden) {
                 mobileMenu.classList.remove('hidden');
                 mobileMenuBtn.setAttribute('aria-expanded', 'true');
@@ -141,14 +247,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     }
 
-    // --- 5. 音频播放器 (A11y: Keyboard Support) ---
+    // --- 6. Audio Player ---
     const audioElements = document.querySelectorAll('audio');
     audioElements.forEach(audio => {
         if (audio.closest('.zen-audio-player')) return;
         const player = document.createElement('div');
         player.className = 'zen-audio-player';
 
-        const btn = document.createElement('button'); // Changed to button for keyboard focus
+        const btn = document.createElement('button');
         btn.className = 'zen-audio-btn';
         btn.setAttribute('aria-label', '播放音频');
         btn.innerHTML = '<i class="ph ph-play text-lg" aria-hidden="true"></i>';
@@ -159,7 +265,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         progressContainer.setAttribute('aria-valuenow', '0');
         progressContainer.setAttribute('aria-valuemin', '0');
         progressContainer.setAttribute('aria-valuemax', '100');
-        // A11y Fix: 添加 aria-label 到 progressbar
         progressContainer.setAttribute('aria-label', '音频播放进度');
 
         const progressBar = document.createElement('div');
@@ -169,7 +274,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const timeDisplay = document.createElement('div');
         timeDisplay.className = 'zen-audio-time';
         timeDisplay.innerText = '00:00';
-        timeDisplay.setAttribute('aria-hidden', 'true'); // Screen readers can use progressbar value
+        timeDisplay.setAttribute('aria-hidden', 'true');
 
         player.appendChild(btn);
         player.appendChild(progressContainer);
@@ -193,7 +298,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             const percent = (audio.currentTime / audio.duration) * 100;
             progressBar.style.width = percent + '%';
             progressContainer.setAttribute('aria-valuenow', Math.round(percent));
-
             const minutes = Math.floor(audio.currentTime / 60);
             const seconds = Math.floor(audio.currentTime % 60);
             timeDisplay.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
@@ -213,7 +317,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 
-    // --- 6. 返回顶部按钮 ---
+    // --- 7. Back to Top ---
     const backToTopBtn = document.getElementById('back-to-top');
     if (backToTopBtn) {
         window.addEventListener('scroll', () => {
@@ -228,7 +332,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     }
 
-    // --- 7. 搜索功能 (Search Modal) ---
+    // --- 8. Search ---
     const searchToggle = document.getElementById('search-toggle');
     const searchModal = document.getElementById('search-modal');
     const searchClose = document.getElementById('search-close');
@@ -237,15 +341,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     if (searchToggle && searchModal && searchInput) {
         const openSearch = () => {
-            lastActiveElementBeforeSearch = document.activeElement; // 记录当前焦点
+            lastActiveElementBeforeSearch = document.activeElement;
             searchModal.classList.remove('hidden');
-            // 延时移除 opacity-0 以触发 CSS transition
             requestAnimationFrame(() => {
                 searchModal.classList.remove('opacity-0');
             });
             document.body.style.overflow = 'hidden';
             searchToggle.setAttribute('aria-expanded', 'true');
-            // 自动聚焦到输入框
             setTimeout(() => searchInput.focus(), 100);
         };
 
@@ -253,39 +355,25 @@ document.addEventListener('DOMContentLoaded', (event) => {
             searchModal.classList.add('opacity-0');
             setTimeout(() => {
                 searchModal.classList.add('hidden');
-                document.body.style.overflow = ''; // 恢复滚动
-                if (lastActiveElementBeforeSearch) {
-                    lastActiveElementBeforeSearch.focus(); // 恢复焦点
-                }
-            }, 200); // 匹配 CSS duration-200
+                document.body.style.overflow = '';
+                if (lastActiveElementBeforeSearch) lastActiveElementBeforeSearch.focus();
+            }, 200);
             searchToggle.setAttribute('aria-expanded', 'false');
         };
 
         searchToggle.addEventListener('click', openSearch);
-
-        if (searchClose) {
-            searchClose.addEventListener('click', closeSearch);
-        }
-
-        // 点击遮罩层关闭
+        if (searchClose) searchClose.addEventListener('click', closeSearch);
         searchModal.addEventListener('click', (e) => {
             if (e.target === searchModal) closeSearch();
         });
 
-        // 键盘事件
         document.addEventListener('keydown', (e) => {
-            // Esc 关闭
             if (e.key === 'Escape' && !searchModal.classList.contains('hidden')) {
                 closeSearch();
             }
-            // Cmd+K / Ctrl+K 快捷键 (可选增强)
             if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
                 e.preventDefault();
-                if (searchModal.classList.contains('hidden')) {
-                    openSearch();
-                } else {
-                    closeSearch();
-                }
+                if (searchModal.classList.contains('hidden')) openSearch(); else closeSearch();
             }
         });
     }

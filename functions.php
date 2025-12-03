@@ -39,7 +39,7 @@ add_action('after_setup_theme', 'zen_setup');
  * 3. 加载资源
  */
 function zen_scripts() {
-    $ver = '1.1.18'; // 更新版本号
+    $ver = '1.1.26'; // 更新版本号
 
     // A. Google Fonts
     wp_enqueue_style('zen-google-fonts', 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif+SC:wght@200..900&display=swap', array(), null);
@@ -66,7 +66,7 @@ function zen_scripts() {
 add_action('wp_enqueue_scripts', 'zen_scripts');
 
 /**
- * 4. 样式补丁 (关键修复: 恢复丢失的样式 + 修复音频播放器对比度 + 音频播放器暗色样式 + 修复TOC暗色模式Hover)
+ * 4. 样式补丁 (关键修复: 滚动条样式、对比度、TOC交互)
  */
 function zen_custom_styles() {
     ?>
@@ -101,20 +101,9 @@ function zen_custom_styles() {
         }
         #submit:hover, #submit:focus { opacity: 0.9; transform: translateY(-1px); outline: 2px solid #3b82f6; outline-offset: 2px; }
         
-        /* * 暗色模式样式修复：
-         * 将原来的白色背景(#fff)改为深灰色(#27272a)，文字改为浅灰(#e5e7eb)，
-         * 并添加微弱边框以增加层次感，避免"亮瞎眼"。
-         */
         @media (prefers-color-scheme: dark) {
-            #submit { 
-                background-color: #27272a !important; /* Zinc-800 */
-                color: #e5e7eb !important; /* Zinc-200 */
-                border: 1px solid #3f3f46 !important; /* Zinc-700 */
-            }
-            #submit:hover, #submit:focus { 
-                background-color: #3f3f46 !important; /* Zinc-700 */
-                color: #fff !important;
-            }
+            #submit { background-color: #27272a !important; color: #e5e7eb !important; border: 1px solid #3f3f46 !important; }
+            #submit:hover, #submit:focus { background-color: #3f3f46 !important; color: #fff !important; }
         }
 
         /* Skip Link */
@@ -122,56 +111,57 @@ function zen_custom_styles() {
         .skip-link:focus { top: 0; outline: 3px solid #3b82f6; }
         .dark .skip-link { background: #fff; color: #000; }
 
-        /* TOC */
-        .toc-link { display: block; padding: 0.375rem 0; border-left: 2px solid transparent; margin-left: -1px; color: #4b5563; transition: all 0.3s ease; text-decoration: none; }
+        /* TOC Links */
+        .toc-link { display: block; padding: 0.375rem 0; border-left: 2px solid transparent; margin-left: -1px; color: #6b7280; transition: all 0.3s ease; text-decoration: none; }
         .toc-link:hover, .toc-link:focus { color: #111827; }
-        
-        /* 修复 TOC 暗色模式颜色 (同时支持 .dark 类和系统偏好) */
-        .dark .toc-link { color: #9ca3af; }
+        .toc-link.active { border-left-color: #111827; color: #111827; font-weight: 600; }
+
+        /* TOC Links - Dark Mode (Fixes hover text color) */
         .dark .toc-link:hover, .dark .toc-link:focus { color: #fff; }
-        @media (prefers-color-scheme: dark) {
+        .dark .toc-link.active { border-left-color: #fff; color: #fff; }
+
+        @media (prefers-color-scheme: dark) { 
             .toc-link { color: #9ca3af; }
             .toc-link:hover, .toc-link:focus { color: #fff; }
+            .toc-link.active { border-left-color: #fff; color: #fff; } 
         }
-
-        .toc-link.active { border-left-color: #111827; color: #111827; font-weight: 500; }
-        @media (prefers-color-scheme: dark) { .toc-link.active { border-left-color: #fff; color: #fff; } }
-
-        /* --- 修复: 恢复音频播放器样式并增强对比度与暗色支持 --- */
-        .zen-audio-player { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 9999px; margin: 2rem 0; transition: all 0.3s ease; }
         
-        /* 暗色模式下播放器背景变深，边框调整 */
-        @media (prefers-color-scheme: dark) { 
-            .zen-audio-player { background: #1f2937; border-color: #374151; } 
+        /* --- 修复: 极简滚动条样式 (兼容 Firefox 和 Webkit) --- */
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #e5e7eb transparent; }
+        .dark .custom-scrollbar { scrollbar-color: #374151 transparent; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 3px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #374151; }
+        
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #d1d5db; }
+        .dark .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #4b5563; }
+
+        @media (prefers-color-scheme: dark) {
+            .custom-scrollbar { scrollbar-color: #374151 transparent; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #374151; }
+            .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #4b5563; }
         }
+
+        /* Audio Player */
+        .zen-audio-player { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 9999px; margin: 2rem 0; transition: all 0.3s ease; }
+        @media (prefers-color-scheme: dark) { .zen-audio-player { background: #1f2937; border-color: #374151; } }
         
         .zen-audio-btn { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #111827; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; border: none; padding: 0; }
         .zen-audio-btn:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
-        
-        /* 暗色模式下按钮变成浅色，图标深色 */
-        @media (prefers-color-scheme: dark) { 
-            .zen-audio-btn { background: #e5e7eb; color: #111827; } 
-        }
+        @media (prefers-color-scheme: dark) { .zen-audio-btn { background: #e5e7eb; color: #111827; } }
         
         .zen-audio-progress-container { flex-grow: 1; height: 4px; background: #9ca3af; border-radius: 2px; position: relative; cursor: pointer; }
-        /* 暗色模式下进度条底色变深 */
-        @media (prefers-color-scheme: dark) { 
-            .zen-audio-progress-container { background: #4b5563; } 
-        }
+        @media (prefers-color-scheme: dark) { .zen-audio-progress-container { background: #4b5563; } }
 
         .zen-audio-progress-bar { height: 100%; background: #111827; border-radius: 2px; width: 0%; position: relative; }
-        /* 暗色模式下进度条填充色变成浅色 */
-        @media (prefers-color-scheme: dark) { 
-            .zen-audio-progress-bar { background: #e5e7eb; } 
-        }
+        @media (prefers-color-scheme: dark) { .zen-audio-progress-bar { background: #e5e7eb; } }
         
         .zen-audio-time { font-size: 0.75rem; font-family: monospace; color: #4b5563; min-width: 40px; text-align: right; font-weight: 500; }
-        /* 暗色模式下时间文字颜色变浅 */
-        @media (prefers-color-scheme: dark) { 
-            .zen-audio-time { color: #d1d5db; } 
-        }
+        @media (prefers-color-scheme: dark) { .zen-audio-time { color: #d1d5db; } }
 
-        /* --- 修复: 恢复文件下载块样式 --- */
+        /* File Block */
         .wp-block-file { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; margin: 2rem 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s; }
         .wp-block-file:hover { border-color: #9ca3af; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         @media (prefers-color-scheme: dark) { .wp-block-file { background: #18181b; border-color: #27272a; } .wp-block-file:hover { border-color: #52525b; } }
@@ -181,13 +171,9 @@ function zen_custom_styles() {
         .wp-block-file .wp-block-file__button:hover { opacity: 0.9; }
         @media (prefers-color-scheme: dark) { .wp-block-file .wp-block-file__button { background: #fff; color: #000; } }
 
-        /* Embeds */
+        /* Utilities */
         .wp-block-embed iframe { width: 100% !important; height: auto !important; aspect-ratio: 16 / 9; border-radius: 0.5rem; }
-        
-        /* Code blocks */
         .prose pre, .wp-block-code { overflow-x: auto !important; max-width: 100%; }
-        
-        /* Screen Reader Text */
         .screen-reader-text { border: 0; clip: rect(1px, 1px, 1px, 1px); clip-path: inset(50%); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; width: 1px; word-wrap: normal !important; }
     </style>
     <?php
@@ -249,7 +235,6 @@ function zen_pagination() {
     }
 }
 
-// 评论回调 (保持 A11y 结构修复，调整间距)
 function zen_comment_callback($comment, $args, $depth) {
     ?>
     <li id="comment-<?php comment_ID(); ?>" <?php comment_class(); ?>>
@@ -262,11 +247,6 @@ function zen_comment_callback($comment, $args, $depth) {
                     <h4 class="text-sm font-bold text-gray-900 dark:text-white"><?php echo get_comment_author(); ?></h4>
                     <time class="text-xs text-gray-600 dark:text-gray-400 font-sans" datetime="<?php echo get_comment_time('c'); ?>"><?php printf(__('%1$s前', 'zen'), human_time_diff(get_comment_time('U'), current_time('timestamp'))); ?></time>
                 </div>
-                <!-- 
-                    间距修复：
-                    1. 内容区域 mb-3 -> mb-2 (缩小底部间距)
-                    2. 回复按钮 mt-5 -> mt-1 (缩小顶部间距)
-                -->
                 <div class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose dark:prose-invert max-w-none break-words mb-2"><?php comment_text(); ?></div>
                 <div class="text-xs mt-1">
                     <?php 
